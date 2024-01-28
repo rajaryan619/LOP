@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template
+import streamlit as st
 import torch
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 import PyPDF2
@@ -22,29 +22,16 @@ def extract_text_from_pdf(pdf_path):
 pdf_path = '48lawsofpower.pdf'
 pdf_text = extract_text_from_pdf(pdf_path)
 
-# Initialize Flask app
-app = Flask(__name__)
+# Streamlit app
+def main():
+    st.title('GPT-2 Text Generation')
+    question = st.text_input('Enter your question:')
+    if st.button('Generate Answer'):
+        input_text = pdf_text + " " + question  # Combine PDF text with user question
+        input_ids = tokenizer.encode(input_text, return_tensors='pt')
+        output = model.generate(input_ids, max_length=100, num_return_sequences=1, no_repeat_ngram_size=2)
+        generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
+        st.text_area('Generated Answer:', value=generated_text, height=200)
 
-# Home route
-@app.route('/')
-def home():
-    return render_template('index.html')
-
-# Generate route
-@app.route('/generate', methods=['POST'])
-def generate():
-    # Get user input question from the form
-    question = request.form['question']
-    
-    # Generate answer using the GPT-2 model
-    input_text = pdf_text + " " + question  # Combine PDF text with user question
-    input_ids = tokenizer.encode(input_text, return_tensors='pt')
-    output = model.generate(input_ids, max_length=100, num_return_sequences=1, no_repeat_ngram_size=2)
-    generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
-    
-    # Render the template with the original question and generated answer
-    return render_template('index.html', question=question, answer=generated_text)
-
-# Run the Flask app
 if __name__ == '__main__':
-    app.run(debug=True)
+    main()
